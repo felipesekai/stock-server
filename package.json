@@ -2,12 +2,14 @@
   "name": "server-stock",
   "version": "1.0.0",
   "description": "back-end stock-mannagement",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "tsc": "tsc",
+    "start:prod": "node build/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsnd --exit-child server.ts"
   },
-  "author": "",
+  "author": "Felipe Sekai",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^4.3.1",

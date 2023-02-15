@@ -93,11 +93,14 @@ app.post('/order',
     async (request, response) => {
 
         const order: TypeOrder = request.body;
+        try {
+            await Promise.all(
+                order.products.map((product) => updateQuantityinStock(product))
 
-        const result = await Promise.all(
-            order.products.map((product) => updateQuantityinStock(product))
-
-        )
+            )
+        } catch (e) {
+            throw e
+        }
 
         const newOrder: any = await prisma.order.create({
             data: {
@@ -146,33 +149,29 @@ const updateQuantityinStock = async (product: Product) => {
     const stock = productStock.find(item => item.id === product.id)
     if (stock) {
         // if quantity in stock > quantity requested, update quantity  
-        if (stock.quantity > product.quantity) {
+        if (stock.quantity >= product.quantity) {
             updateProduct(product, stock.quantity)
         }
         else {
-            throw new Error('Produto não encontrado')
+            throw new Error('Quantidade em Stock é Inferior a quantidade pedida')
         }
-
-
-
-
+    }
+    else {
+        throw new Error('Item Não Encontrado')
     }
 }
 
 async function updateProduct(product: Product, stock: number) {
-    try {
-        await prisma.product.update({
-            where: {
-                id: product.id,
-            },
-            data: {
-                quantity: stock - product.quantity
-            }
-        })
-    } catch (e) {
-        console.log(e)
-        throw new Error('Não Foi Possivel alterar produto')
-    }
+
+    await prisma.product.update({
+        where: {
+            id: product.id,
+        },
+        data: {
+            quantity: (stock - product.quantity)
+        }
+    })
+
 
 }
 
