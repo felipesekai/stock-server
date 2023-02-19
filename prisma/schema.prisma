@@ -20,12 +20,13 @@ model Product {
 }
 
 model Order {
-  id      Int            @id @default(autoincrement())
-  name    String?        @default("")
-  total   Float
-  date    String
-  hour    Int
-  product OrderProduct[]
+  id            Int            @id @default(autoincrement())
+  name          String?        @default("")
+  total         Float
+  date          String
+  hour          Int
+  paymentMethod String?        @default("Não encontrado")
+  product       OrderProduct[]
 }
 
 model OrderProduct {

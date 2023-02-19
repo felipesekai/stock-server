@@ -13,4 +13,5 @@ export type TypeOrder = {
     products: Product[];
     date: string;
     hour: number;
+    paymentMethod?: string | null
 }

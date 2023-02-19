@@ -74,6 +74,7 @@ app.get('/order/all', async (request, response) => {
             date: true,
             hour: true,
             product: true,
+            paymentMethod: true
         },
         orderBy: {
             id: 'desc'
@@ -108,6 +109,7 @@ app.post('/order',
                     total: Number(order.total),
                     date: order.date ? order.date : formatDate(),
                     hour: convertHoursStringToMinutes(getHour()),
+                    paymentMethod: order.paymentMethod && order.paymentMethod
                 }
             });
 
