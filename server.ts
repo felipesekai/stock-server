@@ -1,9 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
-import express from 'express';
+import express, { query } from 'express';
 import { TypeOrder, Product } from './src/utils/@types';
 import { convertHoursStringToMinutes, convertMinutesToHoursString, getHour } from './src/utils/converter';
 import { formatDate } from './src/utils/data-converter';
+import { error } from './src/utils/errorMsg';
 // import { newORderProduct, updateQuantityinStock } from "./src/Order/OrderFunctions";
 
 const app = express();
@@ -11,8 +12,10 @@ app.use(express.json());
 app.use(cors())
 
 const prisma = new PrismaClient({
-    log: ['query']
+    log: ['query'],
+
 });
+
 
 //get all
 app.get('/product/all', async (request, response) => {
@@ -93,33 +96,37 @@ app.post('/order',
     async (request, response) => {
 
         const order: TypeOrder = request.body;
-        try {
-            await Promise.all(
-                order.products.map((product) => updateQuantityinStock(product))
+        const productStock = await listAllProducts() as Product[]
 
-            )
-        } catch (e) {
-            throw e
-        }
+        await Promise.all(
+            order.products.map((product) => updateQuantityinStock(product, productStock))
 
-        const newOrder: any = await prisma.order.create({
-            data: {
-                name: order.name ? order.name : "",
-                total: Number(order.total),
-                date: order.date ? order.date : formatDate(),
-                hour: convertHoursStringToMinutes(getHour()),
-            }
-        });
+        ).then(async () => {
+            const newOrder: any = await prisma.order.create({
+                data: {
+                    name: order.name ? order.name : "",
+                    total: Number(order.total),
+                    date: order.date ? order.date : formatDate(),
+                    hour: convertHoursStringToMinutes(getHour()),
+                }
+            });
 
-        await newORderProduct(newOrder, order.products)
+            await newORderProduct(newOrder, order.products)
+            return response.status(201).json(newOrder);
 
-        return response.status(201).json(newOrder);
+        }).catch((e) => {
+            console.log("LOGERROR: " + e)
+            const newerror = error("error status code 500", "Aconteceu um erro ao tentar atualizar os produtos, tente novamente!", 500)
+            return response.sendStatus(500).jsonp(newerror)
+
+        })
 
     });
 
 
 
 const newORderProduct = async (order: any, products: Product[]) => {
+
     for (let i = 0; i < products.length; i++) {
         await prisma.orderProduct.create({
             data: {
@@ -129,7 +136,6 @@ const newORderProduct = async (order: any, products: Product[]) => {
             }
         })
     }
-
 }
 const listAllProducts = async () => {
     return await prisma.product.findMany({
@@ -143,14 +149,13 @@ const listAllProducts = async () => {
     })
 }
 
-const updateQuantityinStock = async (product: Product) => {
+const updateQuantityinStock = async (product: Product, productStock: Product[]) => {
 
-    const productStock = await listAllProducts()
     const stock = productStock.find(item => item.id === product.id)
     if (stock) {
         // if quantity in stock > quantity requested, update quantity  
         if (stock.quantity >= product.quantity) {
-            updateProduct(product, stock.quantity)
+            await updateProduct(product, stock.quantity)
         }
         else {
             throw new Error('Quantidade em Stock é Inferior a quantidade pedida')
@@ -162,13 +167,12 @@ const updateQuantityinStock = async (product: Product) => {
 }
 
 async function updateProduct(product: Product, stock: number) {
-
-    await prisma.product.update({
+    await prisma.product.updateMany({
         where: {
             id: product.id,
         },
         data: {
-            quantity: (stock - product.quantity)
+            quantity: stock - product.quantity
         }
     })
 
@@ -176,3 +180,4 @@ async function updateProduct(product: Product, stock: number) {
 }
 
 app.listen(3333);
+
