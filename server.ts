@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
 import express, { query } from 'express';
+import { editProduct } from './src/products/ProducsService';
 import { TypeOrder, Product } from './src/utils/@types';
 import { convertHoursStringToMinutes, convertMinutesToHoursString, getHour } from './src/utils/converter';
 import { formatDate } from './src/utils/data-converter';
@@ -33,17 +34,16 @@ app.get('/product/all', async (request, response) => {
 })
 
 // //put new product
-// app.put('/product/edit', async (request, response) => {
+app.put('/product/edit', async (request, response) => {
 
-//     const product = request.body;
+    const product = request.body;
 
-//     await prisma.product.update(product.id, product
-//     )
+    const edit = editProduct(prisma, product)
 
-//     return response.status(201).json(newProduct);
+    return response.status(201).json(edit);
 
 
-// });
+});
 //post new product
 app.post('/product', async (request, response) => {
 
