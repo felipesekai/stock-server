@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { OrderProduct, prisma, PrismaClient } from "@prisma/client";
+import { response } from "express";
 import { Product } from "../utils/@types";
 
 export const editProduct = (prisma: PrismaClient, product: Product) => {
@@ -17,5 +18,21 @@ export const editProduct = (prisma: PrismaClient, product: Product) => {
     }).catch(error => {
         console.log(error);
         return new Error("Não Foi Possivel Editar");
+    })
+}
+
+export const findProductsById = async (prisma: PrismaClient, productId: number) => {
+
+    return await prisma.product.findFirst({
+        where: {
+            id: productId
+        },
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            quantity: true,
+            price: true
+        },
     })
 }

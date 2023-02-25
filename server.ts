@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
-import express, { query } from 'express';
-import { editProduct } from './src/products/ProducsService';
+import express, { json, query, response } from 'express';
+import { getProductsOrder } from './src/Order/OrderFunctions';
+import { editProduct, findProductsById } from './src/products/ProducsService';
 import { TypeOrder, Product } from './src/utils/@types';
 import { convertHoursStringToMinutes, convertMinutesToHoursString, getHour } from './src/utils/converter';
 import { formatDate } from './src/utils/data-converter';
@@ -31,6 +32,19 @@ app.get('/product/all', async (request, response) => {
     })
 
     return response.json(products)
+});
+//get product by id
+app.get('/product/:id', async (req, res) => {
+    const id: number = Number(req.params.id)
+    const product = await findProductsById(prisma, id)
+    console.log(product)
+    return product
+})
+//get product order by id order
+app.get('/product/order/:id', async (req, res) => {
+    const id: number = Number(req.params.id)
+    const orderProduct = (await getProductsOrder(prisma, id)).map(prod => { return { ...prod.product, quantity: prod.quantity } })
+    return res.status(201).json(orderProduct)
 })
 
 // //put new product
@@ -66,7 +80,7 @@ app.post('/product', async (request, response) => {
 //post new order
 app.get('/order/all', async (request, response) => {
 
-    const orders = prisma.order.findMany({
+    const orders = await prisma.order.findMany({
         select: {
             id: true,
             name: true,
@@ -82,7 +96,7 @@ app.get('/order/all', async (request, response) => {
     })
 
     return response.json(
-        (await orders).map(order => {
+        (orders).map(order => {
             return {
                 ...order,
                 hour: convertMinutesToHoursString(order.hour)
@@ -150,6 +164,7 @@ const listAllProducts = async () => {
         }
     })
 }
+
 
 const updateQuantityinStock = async (product: Product, productStock: Product[]) => {
 
