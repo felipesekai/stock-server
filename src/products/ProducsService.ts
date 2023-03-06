@@ -36,3 +36,11 @@ export const findProductsById = async (prisma: PrismaClient, productId: number) 
         },
     })
 }
+export const deleteProduct = async (prisma: PrismaClient, productId: number) => {
+
+    return await prisma.product.delete({
+        where: {
+            id: productId
+        }
+    })
+}

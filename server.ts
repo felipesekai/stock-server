@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
-import express, { json, query, response } from 'express';
+import express from 'express';
 import { getProductsOrder } from './src/Order/OrderFunctions';
-import { editProduct, findProductsById } from './src/products/ProducsService';
+import { deleteProduct, editProduct, findProductsById } from './src/products/ProducsService';
 import { TypeOrder, Product } from './src/utils/@types';
 import { convertHoursStringToMinutes, convertMinutesToHoursString, getHour } from './src/utils/converter';
 import { formatDate } from './src/utils/data-converter';
-import { error } from './src/utils/errorMsg';
+import { error, responseBody } from './src/utils/errorMsg';
 // import { newORderProduct, updateQuantityinStock } from "./src/Order/OrderFunctions";
 
 const app = express();
@@ -14,8 +14,7 @@ app.use(express.json());
 app.use(cors())
 
 const prisma = new PrismaClient({
-    log: ['query'],
-
+    log: ['info', 'query'],
 });
 
 
@@ -45,7 +44,7 @@ app.get('/product/order/:id', async (req, res) => {
     const id: number = Number(req.params.id)
     const orderProduct = (await getProductsOrder(prisma, id)).map(prod => { return { ...prod.product, quantity: prod.quantity } })
     return res.status(201).json(orderProduct)
-})
+});
 
 // //put new product
 app.put('/product/edit', async (request, response) => {
@@ -77,6 +76,18 @@ app.post('/product', async (request, response) => {
 
 });
 
+//delete product
+app.delete('/product/delete/:id', async (request, response) => {
+    const id: number = Number(request.params.id)
+    deleteProduct(prisma, id).then(() => {
+        return response.json(responseBody("Deletar Produto", "Produto Deletado Com sucesso", 200))
+    }).catch(() => {
+        return response.json(responseBody("Deletar Produto", "Erro ao Deletar Produto", 400))
+    })
+})
+
+// _________________________________________________________________________
+
 //post new order
 app.get('/order/all', async (request, response) => {
 
@@ -101,6 +112,7 @@ app.get('/order/all', async (request, response) => {
                 ...order,
                 hour: convertMinutesToHoursString(order.hour)
             }
+
         })
     );
 
