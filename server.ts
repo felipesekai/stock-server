@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import { getProductsOrder } from './src/Order/OrderFunctions';
 import { deleteProduct, editProduct, findProductsById } from './src/products/ProducsService';
+import { getAllRecords, listAllProducts, newEntry, updateProductEntry } from './src/RegisterEntry/ProductEntryService';
 import { TypeOrder, Product } from './src/utils/@types';
 import { convertHoursStringToMinutes, convertMinutesToHoursString, getHour } from './src/utils/converter';
 import { formatDate } from './src/utils/data-converter';
@@ -13,7 +14,7 @@ const app = express();
 app.use(express.json());
 app.use(cors())
 
-const prisma = new PrismaClient({
+export const prisma = new PrismaClient({
     log: ['info', 'query'],
 });
 
@@ -145,10 +146,8 @@ app.post('/order',
         }).catch((e) => {
             console.log("LOGERROR: " + e)
             const newerror = error("error status code 500", "Aconteceu um erro ao tentar atualizar os produtos, tente novamente!", 500)
-            return response.sendStatus(500).jsonp(newerror)
-
+            return response.sendStatus(500).json(newerror)
         })
-
     });
 
 
@@ -165,24 +164,13 @@ const newORderProduct = async (order: any, products: Product[]) => {
         })
     }
 }
-const listAllProducts = async () => {
-    return await prisma.product.findMany({
-        select: {
-            id: true,
-            name: true,
-            description: true,
-            price: true,
-            quantity: true,
-        }
-    })
-}
 
 
 const updateQuantityinStock = async (product: Product, productStock: Product[]) => {
 
     const stock = productStock.find(item => item.id === product.id)
     if (stock) {
-        // if quantity in stock > quantity requested, update quantity  
+        // if quantity in stock > quantity requested, update quantity
         if (stock.quantity >= product.quantity) {
             await updateProduct(product, stock.quantity)
         }
@@ -207,6 +195,48 @@ async function updateProduct(product: Product, stock: number) {
 
 
 }
+
+//new register entry
+app.post('/registryProduct', async (request, response) => {
+    const listEntry: Product[] = request.body
+
+    const productStock = await listAllProducts() as Product[]
+
+    let result = false
+
+    await Promise.all(
+        listEntry.map(product => (newEntry(product)))
+    ).then(async () => {
+        await Promise.all(
+            listEntry.map(product => (updateProductEntry(product, productStock)))
+        ).then(() => {
+            result = true
+        })
+
+    })
+        .catch(() => {
+
+        })
+
+    if (result) {
+        return response.status(201).json("sucesso")
+    } else {
+        return response.status(500).json("error")
+
+    }
+
+
+})
+
+// get all
+app.get('/registryProduct', async (resquest, response) => {
+    const records = await getAllRecords()
+    return response.json(records.map((entry) => {
+        return {
+            ...entry, hour: convertMinutesToHoursString(entry.hour)
+        }
+    }))
+})
 
 app.listen(3333);
 

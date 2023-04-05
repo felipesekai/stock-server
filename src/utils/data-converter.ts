@@ -1,7 +1,6 @@
-export function formatDate() {
+export const formatDate = () => {
     let date = new Date()
     return ((date.getFullYear() + "-" + pad2((date.getMonth() + 1)) + "-" + pad2(date.getDate())))
-
 }
 
 // export const DateFormat = (date) => {

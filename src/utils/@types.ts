@@ -15,3 +15,11 @@ export type TypeOrder = {
     hour: number;
     paymentMethod?: string | null
 }
+export type ProductEntryDTO = {
+    id?: number;
+    // name: string;
+    quantity: number;
+    product: Product;
+    date?: string;
+    hour?: number;
+}
